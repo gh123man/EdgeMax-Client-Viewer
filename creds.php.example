@@ -1,0 +1,12 @@
+<?php
+
+$host = "";
+$username = "";
+$password = "";
+
+define("HOST", $host);
+define("USERNAME", $username);
+define("PASSWORD", $username);
+
+
+?>

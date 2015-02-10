@@ -5,25 +5,33 @@ include_once './CurlFunctions.php';
 session_start();
 
 
-//if (!isset($_SESSION['clientSession'])) {
+if (!isset($_SESSION['clientSession'])) {
     $_SESSION['clientSession'] = CurlFunctions::login(HOST, USERNAME, PASSWORD);
-//}
-
+}
 
 $dhcp = getDhcp($_SESSION['clientSession']);
 $static = getStatic($_SESSION['clientSession']);
 
+if (!$dhcp || !$static) {
+    //renew session
+    $_SESSION['clientSession'] = CurlFunctions::login(HOST, USERNAME, PASSWORD);
+    $dhcp = getDhcp($_SESSION['clientSession']);
+    $static = getStatic($_SESSION['clientSession']);
+}
 
-printStatic($static);
-printNonStatic($dhcp);
+$staticData = getStaticMapping($static);
+$nonStaticData = getNonStatic($dhcp);
 
 
-function printNonStatic($dhcp) {
+printStatic($staticData);
+printNonStatic($nonStaticData);
+
+
+function printNonStatic($data) {
     ?>
     <h3>Non-Static Mappings</h3>
     <table>
         <?php
-        $data = getNonStatic($dhcp);
 
         foreach ($data as $ip => $data) {
             $name = $data->{'client-hostname'};
@@ -45,12 +53,12 @@ function printNonStatic($dhcp) {
 }
 
 
-function printStatic($static) {
+function printStatic($data) {
     ?>
+
     <h3>Static Mappings</h3>
     <table>
         <?php
-        $data = getStaticMapping($static);
 
         foreach ($data as $name => $data) {
             $ip = $data->{'ip-address'};
@@ -74,7 +82,7 @@ function printStatic($static) {
 
 function getDhcp($session) {
     $data = json_decode(CurlFunctions::get(HOST . 'api/edge/data.json?data=dhcp_leases', $session));
-    if (!$data->success) {
+    if (!is_object($data) || !$data->success) {
         return false;
     }
     return $data;
@@ -82,7 +90,7 @@ function getDhcp($session) {
 
 function getStatic($session) {
     $data = json_decode(CurlFunctions::get(HOST . 'api/edge/get.json', $session));
-    if (!$data->success) {
+    if (!is_object($data) || !$data->success) {
         return false;
     }
     return $data;

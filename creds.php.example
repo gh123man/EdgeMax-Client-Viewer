@@ -6,7 +6,7 @@ $password = "";
 
 define("HOST", $host);
 define("USERNAME", $username);
-define("PASSWORD", $username);
+define("PASSWORD", $password);
 
 
 ?>

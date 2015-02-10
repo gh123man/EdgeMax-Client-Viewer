@@ -5,9 +5,9 @@ include_once './CurlFunctions.php';
 session_start();
 
 
-if (!isset($_SESSION['clientSession'])) {
+//if (!isset($_SESSION['clientSession'])) {
     $_SESSION['clientSession'] = CurlFunctions::login(HOST, USERNAME, PASSWORD);
-}
+//}
 
 
 $dhcp = getDhcp($_SESSION['clientSession']);
@@ -73,7 +73,7 @@ function printStatic($static) {
 
 
 function getDhcp($session) {
-    $data = json_decode(CurlFunctions::get('https://router/api/edge/data.json?data=dhcp_leases', $session));
+    $data = json_decode(CurlFunctions::get(HOST . 'api/edge/data.json?data=dhcp_leases', $session));
     if (!$data->success) {
         return false;
     }
@@ -81,7 +81,7 @@ function getDhcp($session) {
 }
 
 function getStatic($session) {
-    $data = json_decode(CurlFunctions::get('https://router/api/edge/get.json', $session));
+    $data = json_decode(CurlFunctions::get(HOST . 'api/edge/get.json', $session));
     if (!$data->success) {
         return false;
     }

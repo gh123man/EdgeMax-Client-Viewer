@@ -10,13 +10,39 @@
             background: #F0F0F0;
         }
         tr, td {
-            padding: 5px;
+            padding: 8px;
             border: 0px;
         }
         body {
             font-family: 'Open Sans', sans-serif;
+            background: #F5F5F5;
         }
         table {border: none;}
+        .panel {
+            float: left;
+            margin: 40px;
+            padding: 40px;
+        }
+        .mac {
+            color: #444;
+            font-size: 9pt;
+        }
+        h3 {
+            font-size: 13pt;
+        }
+
+        input {
+            border: none;
+            border-color: transparent;
+            font-size: 14pt;
+            width: 150px;
+            background: rgba(0, 0, 0, 0);
+        }
+        .card {
+            box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.30);
+            border-radius: 2px;
+            background: #FFF;
+        }
     </style>
 </head>
 
@@ -45,8 +71,26 @@ $staticData = getStaticMapping($static);
 $nonStaticData = getNonStatic($dhcp);
 
 
-printStatic($staticData);
-printNonStatic($nonStaticData);
+$dhcpClients = getDHCPLans($dhcp);
+$staticClients = getStaticLans($static);
+
+foreach ($staticClients as $lan => $clients) {
+?>
+
+    <div class="panel card">
+        <div class="title"><?php echo $lan; ?></div>
+<?php
+        printStatic($clients[0]);
+        printNonStatic($dhcpClients->{$lan});
+?>
+
+    </div>
+    
+<?php
+}
+
+//printStatic($staticData);
+//printNonStatic($nonStaticData);
 
 
 function printNonStatic($data) {
@@ -54,7 +98,6 @@ function printNonStatic($data) {
     <h3>DHCP Addresses</h3>
     <table cellspacing="0" cellpadding="0">
         <tr>
-            <th></th>
             <th>Computer Name</th>
             <th>IP</th>
         </tr>
@@ -62,20 +105,23 @@ function printNonStatic($data) {
 
         foreach ($data as $ip => $data) {
             $name = $data->{'client-hostname'};
+            $mac = $data->{'mac'};
 
-            drawYouCheck($ip);
+            tr($ip, function() use ($name, $ip, $mac) {
 
-            echo '<td>';
-            echo $name;
-            echo '</td>';
+?>
+                <td>
+                    <div>
+                    <div><?php echo $name?><div>
+                    <div class="mac"><?php echo $mac?></div>
+                    <div>
 
-            echo '<td>';
-            echo $ip;
-            echo '</td>';
-
-            echo '</tr>';
+                </td>
+                <td><input onClick="this.select();" value="<?php echo $ip?>" readonly></td> 
+<?php
+            });
         }
-        ?>
+?>
     </table>
     <?php
 }
@@ -87,7 +133,6 @@ function printStatic($data) {
     <h3>Static Mappings</h3>
     <table cellspacing="0" cellpadding="0">
         <tr>
-            <th></th>
             <th>Computer Name</th>
             <th>IP</th>
         </tr>
@@ -95,32 +140,35 @@ function printStatic($data) {
 
         foreach ($data as $name => $data) {
             $ip = $data->{'ip-address'};
+            $mac = $data->{'mac-address'};
 
-            drawYouCheck($ip);
+            tr($ip, function() use ($name, $ip, $mac) {
 
-            echo '<td>';
-            echo $name;
-            echo '</td>';
+?>
+                <td>
+                    <div>
+                    <div><?php echo $name?><div>
+                    <div class="mac"><?php echo $mac?></div>
+                    <div>
 
-            echo '<td>';
-            echo $ip;
-            echo '</td>';
-
-            echo '</tr>';
+                </td>
+                <td><input onClick="this.select();" value="<?php echo $ip?>" readonly></td> 
+<?php
+            });
         }
         ?>
     </table>
     <?php
 }
 
-function drawYouCheck($ip) {
+function tr($ip, $body) {
     if ($ip == $_SERVER['REMOTE_ADDR']) {
         echo '<tr class="hightlight hover">';
-        echo '<td>YOU</td>';
     } else {
         echo '<tr class="hover">';
-        echo '<td></td>';
     }
+    $body();
+    echo "</tr>";
 }
 
 function getDhcp($session) {
@@ -139,7 +187,31 @@ function getStatic($session) {
     return $data;
 }
 
+function getDHCPLans($obj) {
+    return $obj->output->{'dhcp-server-leases'};
+}
+
+function getStaticLans($obj) {
+    $out = array();
+    foreach ($obj->GET->service->{'dhcp-server'}->{'shared-network-name'} as $lan => $network) {
+        foreach ($network->subnet as $range => $subnet) {
+            $out[$lan][] = $subnet->{'static-mapping'};
+        }
+    }
+    return $out;
+    
+}
+
 function getStaticMapping($static) {
+    /*
+    $subnet = array();
+    $lans = $static->GET->service->{'dhcp-server'}->{'shared-network-name'};
+    foreach ($lans as $lan) {
+        foreach ($lan as $subnet) {
+            
+        }
+    }
+     */
     return $static->GET->service->{'dhcp-server'}->{'shared-network-name'}->LAN1->subnet->{'192.168.1.0/24'}->{'static-mapping'};
 }
 

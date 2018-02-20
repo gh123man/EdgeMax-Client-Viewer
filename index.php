@@ -1,3 +1,10 @@
+<?php
+include_once './creds.php';
+include_once './CurlFunctions.php';
+
+session_start()
+?>
+
 <html>
 
 <head>
@@ -48,10 +55,6 @@
 
 <body>
 <?php
-include_once './creds.php';
-include_once './CurlFunctions.php';
-
-session_start();
 
 if (!isset($_SESSION['clientSession'])) {
     $_SESSION['clientSession'] = CurlFunctions::login(HOST, USERNAME, PASSWORD);
@@ -102,7 +105,9 @@ function printNonStatic($data) {
             <th>IP</th>
         </tr>
         <?php
-
+        if (empty($data)) {
+            return;
+        }
         foreach ($data as $ip => $data) {
             $name = $data->{'client-hostname'};
             $mac = $data->{'mac'};
@@ -171,16 +176,16 @@ function tr($ip, $body) {
     echo "</tr>";
 }
 
-function getDhcp($session) {
-    $data = json_decode(CurlFunctions::get(HOST . 'api/edge/data.json?data=dhcp_leases', $session));
+function getDhcp($cookies) {
+    $data = json_decode(CurlFunctions::get(HOST . 'api/edge/data.json?data=dhcp_leases', $cookies));
     if (!is_object($data) || !$data->success) {
         return false;
     }
     return $data;
 }
 
-function getStatic($session) {
-    $data = json_decode(CurlFunctions::get(HOST . 'api/edge/get.json', $session));
+function getStatic($cookies) {
+    $data = json_decode(CurlFunctions::get(HOST . 'api/edge/get.json', $cookies));
     if (!is_object($data) || !$data->success) {
         return false;
     }
@@ -193,13 +198,13 @@ function getDHCPLans($obj) {
 
 function getStaticLans($obj) {
     $out = array();
-    foreach ($obj->GET->service->{'dhcp-server'}->{'shared-network-name'} as $lan => $network) {
+    $items = $obj->GET->service->{'dhcp-server'}->{'shared-network-name'};
+    foreach ($items as $lan => $network) {
         foreach ($network->subnet as $range => $subnet) {
             $out[$lan][] = $subnet->{'static-mapping'};
         }
     }
     return $out;
-    
 }
 
 function getStaticMapping($static) {
@@ -218,9 +223,6 @@ function getStaticMapping($static) {
 function getNonStatic($dhcp) {
     return $dhcp->output->{'dhcp-server-leases'}->LAN1;
 }
-
-
-
 
 ?>
 </body>

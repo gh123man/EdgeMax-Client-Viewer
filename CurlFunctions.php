@@ -25,21 +25,21 @@ class CurlFunctions {
         $ch      = curl_init($url);
         curl_setopt_array($ch, $options);
         $content = curl_exec($ch);
-        //$err     = curl_errno($ch);
-        //$errmsg  = curl_error($ch);
         $header  = curl_getinfo($ch);
         curl_close($ch);
 
-        //$header['errno']   = $err;
-        //$header['errmsg']  = $errmsg;
-        //$header['content'] = $content;
+        preg_match_all('/Set-Cookie:\s*([\w=\-\.]*)/', $content, $match);
 
-        preg_match('/^Set-Cookie:\s*([^;]*)/mi', $content, $match);
-        parse_str($match[1], $cookies);
-        return $cookies['PHPSESSID'];
+        foreach ($match[1] as $value) {
+            $cookieString .= $value . ';';
+        }
+
+        return $cookieString;
     }
 
-    public static function get($url, $sessionId) {
+    public static function get($url, $cookies) {
+
+       
 
         $options = array(
             CURLOPT_RETURNTRANSFER => true,
@@ -54,7 +54,7 @@ class CurlFunctions {
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_HTTPHEADER     => array("Expect:  "),
-            CURLOPT_COOKIE         => 'PHPSESSID=' . $sessionId,
+            CURLOPT_COOKIE         => $cookies,
         );
 
         $ch = curl_init($url);
@@ -65,6 +65,4 @@ class CurlFunctions {
         return($content);
     }
 }
-
-
 ?>
